@@ -87,7 +87,13 @@ const NEWS_SOURCES = [
     { name: 'Hindu UP', url: 'https://www.thehindu.com/news/national/other-states/feeder/default.rss' },
     { name: 'Indian Express UP', url: 'https://indianexpress.com/section/cities/lucknow/feed/' },
     { name: 'NDTV India', url: 'https://feeds.feedburner.com/ndtv/Tzjl' },
-    { name: 'ANI', url: 'https://www.aninews.in/feed/' }
+    { name: 'ANI', url: 'https://www.aninews.in/feed/' },
+    // Additional sources for more coverage
+    { name: 'Hindustan Times India', url: 'https://www.hindustantimes.com/feeds/rss/india-news/rssfeed.xml' },
+    { name: 'TOI India', url: 'https://timesofindia.indiatimes.com/rssfeeds/296589292.cms' },
+    { name: 'NDTV Top Stories', url: 'https://feeds.feedburner.com/NDTV-LatestNews' },
+    { name: 'Indian Express India', url: 'https://indianexpress.com/section/india/feed/' },
+    { name: 'The Wire', url: 'https://thewire.in/feed' }
 ];
 
 // Keywords for categorization
@@ -190,14 +196,32 @@ async function scrapeNews() {
     
     console.log(`Fetched ${allItems.length} items from RSS feeds`);
     
-    // Filter for UP-related news
+    // Filter for UP-related news with broader keywords
     const upNews = allItems.filter(item => {
         const text = ((item.title || '') + ' ' + (item.contentSnippet || item.description || '')).toLowerCase();
         return text.includes('uttar pradesh') || 
                text.includes(' up ') || 
                text.includes('lucknow') || 
                text.includes('yogi') ||
+               text.includes('yogi adityanath') ||
                text.includes('akhilesh') ||
+               text.includes('akhilesh yadav') ||
+               text.includes('mayawati') ||
+               text.includes('samajwadi party') ||
+               text.includes(' bjp ') ||
+               text.includes(' bsp ') ||
+               text.includes(' sp ') ||
+               text.includes('varanasi') ||
+               text.includes('prayagraj') ||
+               text.includes('allahabad') ||
+               text.includes('noida') ||
+               text.includes('agra') ||
+               text.includes('kanpur') ||
+               text.includes('meerut') ||
+               text.includes('ghaziabad') ||
+               text.includes('gorakhpur') ||
+               text.includes('bareilly') ||
+               text.includes('ayodhya') ||
                UP_ACS.some(ac => text.includes(ac.district.toLowerCase()));
     });
     
@@ -226,46 +250,11 @@ async function scrapeNews() {
         };
     });
     
-    // Generate additional mock events to reach 250+ target
-    const mockEventsNeeded = Math.max(0, 250 - events.length);
-    console.log(`Generating ${mockEventsNeeded} additional mock events`);
-    
-    for (let i = 0; i < mockEventsNeeded; i++) {
-        const ac = UP_ACS[Math.floor(Math.random() * UP_ACS.length)];
-        const categories = Object.keys(KEYWORDS);
-        const category = categories[Math.floor(Math.random() * categories.length)];
-        const layers = ['ac-politics', 'state-news'];
-        const layer = layers[Math.floor(Math.random() * layers.length)];
-        
-        const templates = {
-            protest: [`Farmers stage protest in ${ac.name}`, `Opposition demonstrates against government in ${ac.district}`],
-            rally: [`Political rally held in ${ac.name}`, `${ac.party} organizes public meeting in ${ac.district}`],
-            scheme: [`New development project announced in ${ac.name}`, `Infrastructure work begins in ${ac.district}`],
-            election: [`Bypoll preparations underway in ${ac.name}`, `Candidates file nominations in ${ac.district}`]
-        };
-        
-        const titleTemplates = templates[category];
-        const title = titleTemplates[Math.floor(Math.random() * titleTemplates.length)];
-        
-        events.push({
-            id: `event_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 9)}`,
-            title,
-            description: `Political activity reported in ${ac.name} constituency, ${ac.district} district. Local leaders and party workers actively participating.`,
-            category,
-            layer,
-            ac: ac.name,
-            location: ac.district,
-            lat: ac.lat + (Math.random() - 0.5) * 0.05,
-            lng: ac.lng + (Math.random() - 0.5) * 0.05,
-            date: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
-            source: 'https://example.com/news/' + i
-        });
-    }
-    
+    // Store only real events from RSS feeds (no mock data)
     eventsData = events;
     lastUpdateTime = new Date().toISOString();
     
-    console.log(`Total events stored: ${eventsData.length}`);
+    console.log(`Total REAL events stored: ${eventsData.length}`);
     
     // Save to file
     await saveDataToFile();
