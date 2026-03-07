@@ -140,6 +140,7 @@ function categorizeEvent(title, description) {
 function matchToAC(title, description) {
     const text = (title + ' ' + description).toLowerCase();
     
+    // Try to match specific AC or district mentions
     for (const ac of UP_ACS) {
         const acName = ac.name.toLowerCase();
         const district = ac.district.toLowerCase();
@@ -149,8 +150,9 @@ function matchToAC(title, description) {
         }
     }
     
-    // Return random AC if no match (for diversity)
-    return UP_ACS[Math.floor(Math.random() * UP_ACS.length)];
+    // For state-level news (no specific location), default to Lucknow Central (state capital)
+    // This is better than random assignment
+    return UP_ACS.find(ac => ac.name === 'Lucknow Central') || UP_ACS[0];
 }
 
 // Determine layer based on content
@@ -196,21 +198,29 @@ async function scrapeNews() {
     
     console.log(`Fetched ${allItems.length} items from RSS feeds`);
     
-    // Filter for UP-related news with broader keywords
+    // Filter for UP-related news ONLY (exclude other states)
     const upNews = allItems.filter(item => {
         const text = ((item.title || '') + ' ' + (item.contentSnippet || item.description || '')).toLowerCase();
+        
+        // Exclude news about other states
+        const excludeStates = ['bihar', 'jharkhand', 'delhi', 'madhya pradesh', 'mp ', 'haryana', 
+                               'rajasthan', 'punjab', 'uttarakhand', 'bengal', 'maharashtra', 
+                               'karnataka', 'tamil nadu', 'kerala', 'gujarat', 'patna', 'ranchi',
+                               'jaipur', 'chandigarh', 'dehradun', 'kolkata', 'mumbai', 'bengaluru',
+                               'chennai', 'hyderabad', 'ahmedabad'];
+        
+        // If it mentions other states, skip it
+        if (excludeStates.some(state => text.includes(state))) {
+            return false;
+        }
+        
+        // Must explicitly mention UP or major UP cities/leaders
         return text.includes('uttar pradesh') || 
-               text.includes(' up ') || 
+               text.includes(' up ') ||
+               text.includes('u.p.') ||
                text.includes('lucknow') || 
-               text.includes('yogi') ||
                text.includes('yogi adityanath') ||
-               text.includes('akhilesh') ||
                text.includes('akhilesh yadav') ||
-               text.includes('mayawati') ||
-               text.includes('samajwadi party') ||
-               text.includes(' bjp ') ||
-               text.includes(' bsp ') ||
-               text.includes(' sp ') ||
                text.includes('varanasi') ||
                text.includes('prayagraj') ||
                text.includes('allahabad') ||
@@ -222,6 +232,13 @@ async function scrapeNews() {
                text.includes('gorakhpur') ||
                text.includes('bareilly') ||
                text.includes('ayodhya') ||
+               text.includes('mathura') ||
+               text.includes('aligarh') ||
+               text.includes('moradabad') ||
+               text.includes('saharanpur') ||
+               text.includes('firozabad') ||
+               text.includes('jhansi') ||
+               text.includes('muzaffarnagar') ||
                UP_ACS.some(ac => text.includes(ac.district.toLowerCase()));
     });
     
@@ -235,14 +252,22 @@ async function scrapeNews() {
         const ac = matchToAC(title, description);
         const layer = determineLayer(title, description);
         
+        // Check if this is actually AC-specific or state-level
+        const text = (title + ' ' + description).toLowerCase();
+        const isACSpecific = UP_ACS.some(ac => 
+            text.includes(ac.name.toLowerCase()) || text.includes(ac.district.toLowerCase())
+        );
+        
         return {
             id: `event_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             title: title.substring(0, 150),
-            description: description.substring(0, 300),
+            description: isACSpecific 
+                ? description.substring(0, 300)
+                : `[State-level news] ${description.substring(0, 280)}`,
             category,
             layer,
             ac: ac.name,
-            location: ac.district,
+            location: isACSpecific ? ac.district : 'Uttar Pradesh (State-wide)',
             lat: ac.lat + (Math.random() - 0.5) * 0.05, // Add slight randomness
             lng: ac.lng + (Math.random() - 0.5) * 0.05,
             date: item.pubDate || new Date().toISOString(),
