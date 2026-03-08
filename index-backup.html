@@ -41,8 +41,8 @@
         #map {
             position: fixed;
             top: 70px;
-            left: 340px;
-            width: calc(100% - 340px);
+            left: 0;
+            width: 100%;
             height: calc(100vh - 70px);
             z-index: 1;
         }
@@ -70,30 +70,6 @@
             color: var(--accent-orange);
         }
         
-        .header-controls {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-        }
-        
-        .view-toggle {
-            padding: 10px 20px;
-            background: var(--accent-orange);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .view-toggle:hover {
-            background: #ff8555;
-            transform: translateY(-2px);
-        }
-        
         .view-indicator {
             font-family: 'JetBrains Mono', monospace;
             font-size: 12px;
@@ -104,101 +80,42 @@
             border: 1px solid var(--border-color);
         }
         
-        .sidebar {
+        .stats-panel {
             position: fixed;
-            top: 70px;
-            left: 0;
-            width: 340px;
-            height: calc(100vh - 70px);
+            bottom: 20px;
+            left: 20px;
             background: var(--bg-secondary);
-            border-right: 1px solid var(--border-color);
-            overflow-y: auto;
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid var(--accent-orange);
+            box-shadow: var(--shadow);
             z-index: 999;
+            min-width: 250px;
         }
         
-        .sidebar-section {
-            padding: 20px;
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
             border-bottom: 1px solid var(--border-color);
         }
         
-        .section-title {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 16px;
-            letter-spacing: 1px;
-            color: var(--accent-orange);
-            margin-bottom: 12px;
+        .stat-item:last-child {
+            border-bottom: none;
         }
         
-        .search-box {
-            width: 100%;
-            padding: 12px;
-            background: var(--bg-tertiary);
-            border: 2px solid var(--border-color);
-            border-radius: 6px;
-            color: var(--text-primary);
-            font-family: 'Crimson Pro', serif;
+        .stat-label {
             font-size: 14px;
-        }
-        
-        .search-box:focus {
-            outline: none;
-            border-color: var(--accent-orange);
-        }
-        
-        .time-filters {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
-        }
-        
-        .time-btn {
-            padding: 10px;
-            background: var(--bg-tertiary);
-            border: 2px solid var(--border-color);
-            border-radius: 6px;
-            color: var(--text-primary);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 11px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .time-btn:hover {
-            border-color: var(--accent-orange);
-        }
-        
-        .time-btn.active {
-            background: var(--accent-orange);
-            border-color: var(--accent-orange);
-            color: white;
-        }
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-        }
-        
-        .stat-card {
-            background: var(--bg-tertiary);
-            padding: 12px;
-            border-radius: 6px;
-            border-left: 3px solid var(--accent-orange);
+            color: var(--text-secondary);
         }
         
         .stat-value {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 24px;
+            font-size: 20px;
             color: var(--accent-orange);
         }
         
-        .stat-label {
-            font-size: 11px;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-        }
-        
+        /* Custom Leaflet Markers */
         .custom-marker {
             background: var(--accent-orange);
             border: 3px solid white;
@@ -237,6 +154,7 @@
             height: 32px;
         }
         
+        /* Popup Styles */
         .leaflet-popup-content-wrapper {
             background: var(--bg-secondary);
             color: var(--text-primary);
@@ -247,7 +165,7 @@
         
         .leaflet-popup-content {
             margin: 0;
-            width: 350px !important;
+            width: 320px !important;
         }
         
         .popup-header {
@@ -255,19 +173,19 @@
             color: white;
             padding: 15px;
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 18px;
+            font-size: 20px;
             letter-spacing: 1px;
             border-radius: 10px 10px 0 0;
         }
         
         .popup-body {
             padding: 15px;
-            max-height: 400px;
+            max-height: 300px;
             overflow-y: auto;
         }
         
         .event-item {
-            padding: 12px;
+            padding: 10px;
             margin-bottom: 10px;
             background: var(--bg-tertiary);
             border-radius: 6px;
@@ -277,51 +195,13 @@
         .event-title {
             font-weight: 600;
             font-size: 13px;
-            margin-bottom: 6px;
-            line-height: 1.4;
+            margin-bottom: 4px;
         }
         
         .event-meta {
             font-family: 'JetBrains Mono', monospace;
             font-size: 10px;
             color: var(--text-secondary);
-            margin-bottom: 8px;
-        }
-        
-        .event-link {
-            display: inline-block;
-            padding: 6px 12px;
-            background: var(--accent-orange);
-            color: white;
-            text-decoration: none;
-            border-radius: 4px;
-            font-size: 11px;
-            font-family: 'JetBrains Mono', monospace;
-            transition: all 0.3s;
-        }
-        
-        .event-link:hover {
-            background: #ff8555;
-        }
-        
-        .show-all-btn {
-            width: 100%;
-            padding: 12px;
-            background: var(--bg-tertiary);
-            border: 2px solid var(--accent-orange);
-            border-radius: 6px;
-            color: var(--accent-orange);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 10px;
-            transition: all 0.3s;
-        }
-        
-        .show-all-btn:hover {
-            background: var(--accent-orange);
-            color: white;
         }
         
         .leaflet-popup-tip {
@@ -343,17 +223,23 @@
             letter-spacing: 2px;
         }
         
-        ::-webkit-scrollbar {
-            width: 8px;
+        .zoom-hint {
+            position: fixed;
+            top: 90px;
+            right: 20px;
+            background: var(--bg-secondary);
+            padding: 12px 20px;
+            border-radius: 8px;
+            border: 1px solid var(--accent-orange);
+            font-size: 12px;
+            color: var(--text-secondary);
+            z-index: 999;
+            animation: pulse 2s infinite;
         }
         
-        ::-webkit-scrollbar-track {
-            background: var(--bg-tertiary);
-        }
-        
-        ::-webkit-scrollbar-thumb {
-            background: var(--accent-orange);
-            border-radius: 4px;
+        @keyframes pulse {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
         }
     </style>
 </head>
@@ -362,55 +248,33 @@
     
     <div class="header">
         <div class="logo">UP POLITICS MONITOR</div>
-        <div class="header-controls">
-            <button class="view-toggle" id="viewToggle" onclick="toggleView()">
-                🔄 SWITCH VIEW
-            </button>
-            <div class="view-indicator" id="viewIndicator">Loading...</div>
-        </div>
-    </div>
-    
-    <div class="sidebar">
-        <div class="sidebar-section">
-            <div class="section-title">SEARCH LOCATION</div>
-            <input type="text" class="search-box" id="searchBox" 
-                   placeholder="Search state, district, or city...">
-        </div>
-        
-        <div class="sidebar-section">
-            <div class="section-title">TIME FILTER</div>
-            <div class="time-filters">
-                <button class="time-btn" data-days="1">1D</button>
-                <button class="time-btn active" data-days="7">7D</button>
-                <button class="time-btn" data-days="30">30D</button>
-                <button class="time-btn" data-days="all">ALL</button>
-            </div>
-        </div>
-        
-        <div class="sidebar-section">
-            <div class="section-title">STATISTICS</div>
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-value" id="totalEvents">0</div>
-                    <div class="stat-label">Total Events</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="nationalEvents">0</div>
-                    <div class="stat-label">National</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="stateEvents">0</div>
-                    <div class="stat-label">States</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="districtEvents">0</div>
-                    <div class="stat-label">UP Districts</div>
-                </div>
-            </div>
-        </div>
+        <div class="view-indicator" id="viewIndicator">Loading...</div>
     </div>
     
     <div id="map"></div>
+    
+    <div class="zoom-hint" id="zoomHint" style="display: none;">
+        💡 Click on UP to see 75 districts
+    </div>
+    
+    <div class="stats-panel">
+        <div class="stat-item">
+            <span class="stat-label">Total Events:</span>
+            <span class="stat-value" id="totalEvents">0</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">National:</span>
+            <span class="stat-value" id="nationalEvents">0</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">States:</span>
+            <span class="stat-value" id="stateEvents">0</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">UP Districts:</span>
+            <span class="stat-value" id="districtEvents">0</span>
+        </div>
+    </div>
     
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
@@ -423,76 +287,63 @@
         let currentView = 'india';
         let allMarkers = [];
         let markersData = [];
-        let filteredMarkers = [];
-        let currentTimeFilter = 7; // days
         
-        // India bounds to restrict view
-        const INDIA_BOUNDS = [
-            [6, 68],  // Southwest
-            [36, 98]  // Northeast
-        ];
-        
+        // Initialize map
         function initMap() {
             map = L.map('map', {
-                center: [23.5937, 78.9629],
+                center: [23.5937, 78.9629], // India center
                 zoom: 5,
-                minZoom: 5,
+                minZoom: 4,
                 maxZoom: 18,
-                maxBounds: INDIA_BOUNDS,
-                maxBoundsViscosity: 1.0
+                zoomControl: true
             });
             
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap',
-                maxZoom: 18,
-                bounds: INDIA_BOUNDS
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 18
             }).addTo(map);
             
+            // Listen for zoom changes
             map.on('zoomend', handleZoomChange);
             map.on('moveend', updateViewIndicator);
             
+            // Load data
             loadMarkers();
         }
         
+        // Load marker data from API
         async function loadMarkers() {
             try {
                 const response = await fetch(`${API_BASE}/markers`);
                 markersData = await response.json();
                 
-                filterMarkersByTime();
+                console.log('Loaded markers:', markersData);
+                
+                // Update stats
                 updateStats();
+                
+                // Show markers based on current view
                 updateMarkers();
                 
+                // Hide loading
                 document.getElementById('loading').style.display = 'none';
+                
             } catch (error) {
                 console.error('Error loading markers:', error);
                 document.getElementById('loading').textContent = 'ERROR LOADING DATA';
             }
         }
         
-        function filterMarkersByTime() {
-            const now = Date.now();
-            const cutoffMs = currentTimeFilter === 'all' ? Infinity : 
-                           currentTimeFilter * 24 * 60 * 60 * 1000;
-            
-            filteredMarkers = markersData.map(marker => {
-                const filteredEvents = marker.events.filter(event => {
-                    const eventTime = new Date(event.date).getTime();
-                    return (now - eventTime) <= cutoffMs;
-                });
-                
-                return {
-                    ...marker,
-                    events: filteredEvents,
-                    count: filteredEvents.length
-                };
-            }).filter(marker => marker.count > 0);
-        }
-        
+        // Update statistics
         function updateStats() {
-            const stats = { total: 0, national: 0, state: 0, district: 0 };
+            const stats = {
+                total: 0,
+                national: 0,
+                state: 0,
+                district: 0
+            };
             
-            filteredMarkers.forEach(marker => {
+            markersData.forEach(marker => {
                 stats.total += marker.count;
                 if (marker.level === 'national') stats.national += marker.count;
                 else if (marker.level === 'state') stats.state += marker.count;
@@ -505,10 +356,12 @@
             document.getElementById('districtEvents').textContent = stats.district;
         }
         
+        // Handle zoom changes
         function handleZoomChange() {
             const zoom = map.getZoom();
             const center = map.getCenter();
             
+            // If zoomed into UP region
             if (zoom >= 7 && isInUPRegion(center)) {
                 if (currentView !== 'up') {
                     currentView = 'up';
@@ -524,33 +377,30 @@
             updateViewIndicator();
         }
         
+        // Check if view is in UP region
         function isInUPRegion(center) {
+            // UP bounds approximately
             return center.lat > 24 && center.lat < 31 && 
                    center.lng > 77 && center.lng < 85;
         }
         
+        // Update view indicator
         function updateViewIndicator() {
             const zoom = map.getZoom();
             if (currentView === 'india') {
                 document.getElementById('viewIndicator').textContent = 
                     `🌏 INDIA VIEW (Zoom: ${zoom})`;
+                document.getElementById('zoomHint').style.display = 'block';
             } else {
                 document.getElementById('viewIndicator').textContent = 
                     `🗺️ UP DISTRICTS (Zoom: ${zoom})`;
+                document.getElementById('zoomHint').style.display = 'none';
             }
         }
         
-        function toggleView() {
-            if (currentView === 'india') {
-                // Switch to UP view
-                map.flyTo([26.8467, 80.9462], 8, { duration: 1.5 });
-            } else {
-                // Switch to India view
-                map.flyTo([23.5937, 78.9629], 5, { duration: 1.5 });
-            }
-        }
-        
+        // Update markers based on current view
         function updateMarkers() {
+            // Clear existing markers
             allMarkers.forEach(marker => map.removeLayer(marker));
             allMarkers = [];
             
@@ -561,25 +411,28 @@
             }
         }
         
+        // Show India-level view (states + national)
         function showIndiaView() {
-            filteredMarkers.forEach(markerData => {
+            markersData.forEach(markerData => {
+                // Show national and state-level markers
                 if (markerData.level === 'national' || markerData.level === 'state') {
                     createMarker(markerData);
                 }
             });
         }
         
+        // Show UP districts view
         function showUPView() {
-            filteredMarkers.forEach(markerData => {
+            markersData.forEach(markerData => {
+                // Show only UP district markers
                 if (markerData.level === 'district' && markerData.state === 'Uttar Pradesh') {
                     createMarker(markerData);
                 }
             });
         }
         
+        // Create marker
         function createMarker(markerData) {
-            if (markerData.count === 0) return;
-            
             const markerClass = `marker-${markerData.level}`;
             const size = markerData.level === 'national' ? 45 : 
                         markerData.level === 'state' ? 38 : 32;
@@ -592,10 +445,13 @@
             });
             
             const marker = L.marker([markerData.lat, markerData.lng], { icon });
-            const popupContent = createPopupContent(markerData);
-            marker.bindPopup(popupContent, { maxWidth: 370 });
             
-            if (markerData.location.includes('Uttar Pradesh') && currentView === 'india') {
+            // Create popup
+            const popupContent = createPopupContent(markerData);
+            marker.bindPopup(popupContent, { maxWidth: 350 });
+            
+            // Handle click for UP marker in India view
+            if (markerData.location === 'Uttar Pradesh' && currentView === 'india') {
                 marker.on('click', () => {
                     map.flyTo([26.8467, 80.9462], 8, { duration: 1.5 });
                 });
@@ -605,57 +461,47 @@
             allMarkers.push(marker);
         }
         
+        // Create popup content
         function createPopupContent(markerData) {
-            const levelLabel = markerData.level === 'national' ? '🌏 National' :
-                              markerData.level === 'state' ? '🗺️ State' : '📍 District';
+            let levelLabel = markerData.level === 'national' ? '🌏 National News' :
+                            markerData.level === 'state' ? '🗺️ State News' :
+                            '📍 District News';
             
             let html = `
                 <div class="popup-header">
                     ${levelLabel}: ${markerData.location}
-                    <div style="font-size: 14px; opacity: 0.9; margin-top: 4px;">
+                </div>
+                <div class="popup-body">
+                    <div style="margin-bottom: 10px; font-weight: 600; color: var(--accent-orange);">
                         ${markerData.count} Events
                     </div>
-                </div>
-                <div class="popup-body" id="popup-${markerData.location.replace(/\s/g, '-')}">
             `;
             
-            markerData.events.forEach((event, idx) => {
+            // Show first 5 events
+            const eventsToShow = markerData.events.slice(0, 5);
+            eventsToShow.forEach(event => {
                 const date = new Date(event.date);
                 const timeAgo = getTimeAgo(date);
                 
                 html += `
-                    <div class="event-item" style="display: ${idx < 5 ? 'block' : 'none'};" 
-                         data-index="${idx}">
+                    <div class="event-item">
                         <div class="event-title">${event.title}</div>
                         <div class="event-meta">${timeAgo} • ${event.category}</div>
-                        <a href="${event.source}" target="_blank" class="event-link">
-                            READ FULL NEWS →
-                        </a>
                     </div>
                 `;
             });
             
             if (markerData.count > 5) {
-                html += `
-                    <button class="show-all-btn" onclick="showAllEvents('${markerData.location.replace(/\s/g, '-')}')">
-                        SHOW ALL ${markerData.count} EVENTS
-                    </button>
-                `;
+                html += `<div style="text-align: center; padding: 10px; color: var(--text-secondary); font-size: 12px;">
+                    +${markerData.count - 5} more events
+                </div>`;
             }
             
             html += '</div>';
             return html;
         }
         
-        function showAllEvents(locationId) {
-            const popup = document.getElementById(`popup-${locationId}`);
-            const items = popup.querySelectorAll('.event-item');
-            items.forEach(item => item.style.display = 'block');
-            
-            const btn = popup.querySelector('.show-all-btn');
-            if (btn) btn.style.display = 'none';
-        }
-        
+        // Get time ago string
         function getTimeAgo(date) {
             const now = new Date();
             const diffMs = now - date;
@@ -668,38 +514,7 @@
             return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
         }
         
-        // Time filter buttons
-        document.querySelectorAll('.time-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                
-                currentTimeFilter = this.dataset.days === 'all' ? 'all' : 
-                                   parseInt(this.dataset.days);
-                
-                filterMarkersByTime();
-                updateStats();
-                updateMarkers();
-            });
-        });
-        
-        // Search functionality
-        document.getElementById('searchBox').addEventListener('input', function(e) {
-            const query = e.target.value.toLowerCase();
-            
-            if (query.length < 2) return;
-            
-            const match = filteredMarkers.find(m => 
-                m.location.toLowerCase().includes(query)
-            );
-            
-            if (match) {
-                map.flyTo([match.lat, match.lng], 
-                         match.level === 'district' ? 10 : 7, 
-                         { duration: 1 });
-            }
-        });
-        
+        // Initialize on page load
         document.addEventListener('DOMContentLoaded', () => {
             initMap();
         });
