@@ -1,129 +1,63 @@
 const express = require('express');
 const cors = require('cors');
-const axios = require('axios');
 const Parser = require('rss-parser');
 const cron = require('node-cron');
 const fs = require('fs').promises;
 const path = require('path');
+const { INDIA_STATES, UP_DISTRICTS } = require('./geo-data.js');
+const { classifyNewsLocation } = require('./news-classifier.js');
 
 const app = express();
-const parser = new Parser();
+const parser = new Parser({
+    timeout: 10000,
+    headers: {'User-Agent': 'Mozilla/5.0'}
+});
 const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 
-// Serve static files (index.html, CSS, JS)
+// Serve static files
 app.use(express.static(__dirname));
-
-// Serve index.html for root route
 app.get('/', (req, res) => {
     res.sendFile(__dirname + '/index.html');
 });
 
 // Data storage
 let eventsData = [];
-let acBoundariesData = [];
 let lastUpdateTime = null;
 
-// UP Assembly Constituencies (simplified - top 50 with coordinates)
-const UP_ACS = [
-    { name: 'Lucknow Central', district: 'Lucknow', party: 'BJP', lat: 26.8467, lng: 80.9462 },
-    { name: 'Lucknow West', district: 'Lucknow', party: 'BJP', lat: 26.8300, lng: 80.9200 },
-    { name: 'Lucknow East', district: 'Lucknow', party: 'BJP', lat: 26.8600, lng: 80.9700 },
-    { name: 'Lucknow North', district: 'Lucknow', party: 'SP', lat: 26.8800, lng: 80.9500 },
-    { name: 'Lucknow Cantonment', district: 'Lucknow', party: 'BJP', lat: 26.8200, lng: 80.9400 },
-    { name: 'Gorakhpur Urban', district: 'Gorakhpur', party: 'BJP', lat: 26.7606, lng: 83.3732 },
-    { name: 'Gorakhpur Rural', district: 'Gorakhpur', party: 'BJP', lat: 26.7850, lng: 83.4000 },
-    { name: 'Varanasi North', district: 'Varanasi', party: 'BJP', lat: 25.3176, lng: 82.9739 },
-    { name: 'Varanasi South', district: 'Varanasi', party: 'BJP', lat: 25.2900, lng: 82.9850 },
-    { name: 'Varanasi Cantonment', district: 'Varanasi', party: 'BJP', lat: 25.3100, lng: 83.0100 },
-    { name: 'Agra Cantonment', district: 'Agra', party: 'BJP', lat: 27.1767, lng: 78.0081 },
-    { name: 'Agra North', district: 'Agra', party: 'SP', lat: 27.1950, lng: 78.0200 },
-    { name: 'Agra South', district: 'Agra', party: 'BJP', lat: 27.1600, lng: 78.0000 },
-    { name: 'Meerut', district: 'Meerut', party: 'BJP', lat: 28.9845, lng: 77.7064 },
-    { name: 'Meerut Cantonment', district: 'Meerut', party: 'SP', lat: 29.0000, lng: 77.7200 },
-    { name: 'Kanpur Cantonment', district: 'Kanpur Nagar', party: 'BJP', lat: 26.4499, lng: 80.3319 },
-    { name: 'Kanpur', district: 'Kanpur Nagar', party: 'SP', lat: 26.4670, lng: 80.3500 },
-    { name: 'Allahabad South', district: 'Prayagraj', party: 'BJP', lat: 25.4358, lng: 81.8463 },
-    { name: 'Allahabad North', district: 'Prayagraj', party: 'SP', lat: 25.4550, lng: 81.8500 },
-    { name: 'Bareilly', district: 'Bareilly', party: 'BJP', lat: 28.3670, lng: 79.4304 },
-    { name: 'Bareilly Cantonment', district: 'Bareilly', party: 'SP', lat: 28.3800, lng: 79.4500 },
-    { name: 'Moradabad', district: 'Moradabad', party: 'SP', lat: 28.8389, lng: 78.7763 },
-    { name: 'Aligarh', district: 'Aligarh', party: 'BJP', lat: 27.8974, lng: 78.0880 },
-    { name: 'Ghaziabad', district: 'Ghaziabad', party: 'BJP', lat: 28.6692, lng: 77.4538 },
-    { name: 'Noida', district: 'Gautam Buddha Nagar', party: 'BJP', lat: 28.5355, lng: 77.3910 },
-    { name: 'Greater Noida', district: 'Gautam Buddha Nagar', party: 'BJP', lat: 28.4744, lng: 77.5040 },
-    { name: 'Mathura', district: 'Mathura', party: 'BJP', lat: 27.4924, lng: 77.6737 },
-    { name: 'Vrindavan', district: 'Mathura', party: 'SP', lat: 27.5820, lng: 77.6980 },
-    { name: 'Saharanpur', district: 'Saharanpur', party: 'SP', lat: 29.9680, lng: 77.5460 },
-    { name: 'Muzaffarnagar', district: 'Muzaffarnagar', party: 'BJP', lat: 29.4727, lng: 77.7085 },
-    { name: 'Shamli', district: 'Shamli', party: 'BJP', lat: 29.4500, lng: 77.3100 },
-    { name: 'Bulandshahr', district: 'Bulandshahr', party: 'BJP', lat: 28.4067, lng: 77.8500 },
-    { name: 'Hapur', district: 'Hapur', party: 'BJP', lat: 28.7306, lng: 77.7760 },
-    { name: 'Faizabad', district: 'Ayodhya', party: 'BJP', lat: 26.7751, lng: 82.1486 },
-    { name: 'Ayodhya', district: 'Ayodhya', party: 'BJP', lat: 26.7922, lng: 82.1998 },
-    { name: 'Sultanpur', district: 'Sultanpur', party: 'BJP', lat: 26.2647, lng: 82.0711 },
-    { name: 'Amethi', district: 'Amethi', party: 'BJP', lat: 26.1595, lng: 81.8129 },
-    { name: 'Raebareli', district: 'Raebareli', party: 'SP', lat: 26.2124, lng: 81.2371 },
-    { name: 'Azamgarh', district: 'Azamgarh', party: 'SP', lat: 26.0688, lng: 83.1840 },
-    { name: 'Jaunpur', district: 'Jaunpur', party: 'SP', lat: 25.7465, lng: 82.6838 },
-    { name: 'Ballia', district: 'Ballia', party: 'BJP', lat: 25.7672, lng: 84.1491 },
-    { name: 'Ghazipur', district: 'Ghazipur', party: 'BJP', lat: 25.5881, lng: 83.5782 },
-    { name: 'Basti', district: 'Basti', party: 'BJP', lat: 26.8126, lng: 82.7392 },
-    { name: 'Deoria', district: 'Deoria', party: 'BJP', lat: 26.5024, lng: 83.7791 },
-    { name: 'Kushinagar', district: 'Kushinagar', party: 'BJP', lat: 26.7420, lng: 83.8920 },
-    { name: 'Maharajganj', district: 'Maharajganj', party: 'BJP', lat: 27.1434, lng: 83.5619 },
-    { name: 'Siddharthnagar', district: 'Siddharthnagar', party: 'SP', lat: 27.2548, lng: 83.0800 },
-    { name: 'Jhansi', district: 'Jhansi', party: 'BJP', lat: 25.4484, lng: 78.5685 },
-    { name: 'Lalitpur', district: 'Lalitpur', party: 'BJP', lat: 24.6914, lng: 78.4131 },
-    { name: 'Hamirpur', district: 'Hamirpur', party: 'BJP', lat: 25.9565, lng: 80.1533 }
-];
-
-// News sources configuration
+// News sources - 14 sources (English + Hindi)
 const NEWS_SOURCES = [
+    // English sources
     { name: 'TOI UP', url: 'https://timesofindia.indiatimes.com/rssfeeds/4118215.cms' },
     { name: 'Hindu UP', url: 'https://www.thehindu.com/news/national/other-states/feeder/default.rss' },
     { name: 'Indian Express UP', url: 'https://indianexpress.com/section/cities/lucknow/feed/' },
     { name: 'NDTV India', url: 'https://feeds.feedburner.com/ndtv/Tzjl' },
     { name: 'ANI', url: 'https://www.aninews.in/feed/' },
-    // Additional sources for more coverage
-    { name: 'Hindustan Times India', url: 'https://www.hindustantimes.com/feeds/rss/india-news/rssfeed.xml' },
+    { name: 'Hindustan Times', url: 'https://www.hindustantimes.com/feeds/rss/india-news/rssfeed.xml' },
     { name: 'TOI India', url: 'https://timesofindia.indiatimes.com/rssfeeds/296589292.cms' },
-    { name: 'NDTV Top Stories', url: 'https://feeds.feedburner.com/NDTV-LatestNews' },
-    { name: 'Indian Express India', url: 'https://indianexpress.com/section/india/feed/' },
-    { name: 'The Wire', url: 'https://thewire.in/feed' }
+    { name: 'NDTV Top', url: 'https://feeds.feedburner.com/NDTV-LatestNews' },
+    { name: 'Indian Express', url: 'https://indianexpress.com/section/india/feed/' },
+    { name: 'The Wire', url: 'https://thewire.in/feed' },
+    
+    // Hindi sources
+    { name: 'Dainik Jagran', url: 'https://www.jagran.com/rss/uttar-pradesh.xml' },
+    { name: 'Amar Ujala', url: 'https://www.amarujala.com/rss/uttar-pradesh.xml' },
+    { name: 'Hindustan Hindi', url: 'https://www.livehindustan.com/rss/uttar-pradesh/rss.xml' },
+    { name: 'NavBharat Times', url: 'https://navbharattimes.indiatimes.com/rssfeeds/-2128936835.cms' }
 ];
 
 // Keywords for categorization
 const KEYWORDS = {
-    protest: ['protest', 'demonstration', 'dharna', 'andolan', 'strike', 'clash', 'violence', 'controversy', 'opposition'],
-    rally: ['rally', 'public meeting', 'roadshow', 'sabha', 'jan sabha', 'sammelan', 'campaign', 'visit'],
-    scheme: ['scheme', 'inaugurate', 'launch', 'development', 'project', 'infrastructure', 'welfare', 'yojana'],
-    election: ['election', 'bypoll', 'nomination', 'candidate', 'voting', 'poll', 'assembly', 'result']
+    protest: ['protest', 'demonstration', 'dharna', 'andolan', 'strike', 'clash', 'violence', 'controversy', 'विरोध', 'प्रदर्शन', 'धरना', 'आंदोलन'],
+    rally: ['rally', 'public meeting', 'roadshow', 'sabha', 'sammelan', 'campaign', 'रैली', 'सभा', 'सम्मेलन', 'जनसभा'],
+    scheme: ['scheme', 'inaugurate', 'launch', 'development', 'project', 'infrastructure', 'योजना', 'शुरुआत', 'विकास', 'परियोजना'],
+    election: ['election', 'bypoll', 'nomination', 'candidate', 'voting', 'poll', 'चुनाव', 'उपचुनाव', 'मतदान', 'उम्मीदवार']
 };
 
-// Initialize AC Boundaries GeoJSON
-function initializeACBoundaries() {
-    acBoundariesData = {
-        type: 'FeatureCollection',
-        features: UP_ACS.map(ac => ({
-            type: 'Feature',
-            properties: {
-                name: ac.name,
-                district: ac.district,
-                party: ac.party
-            },
-            geometry: {
-                type: 'Point',
-                coordinates: [ac.lng, ac.lat]
-            }
-        }))
-    };
-}
-
-// Categorize event based on keywords
+// Categorize event
 function categorizeEvent(title, description) {
     const text = (title + ' ' + description).toLowerCase();
     
@@ -133,37 +67,20 @@ function categorizeEvent(title, description) {
         }
     }
     
-    return 'rally'; // default category
+    return 'rally'; // default
 }
 
-// Match event to AC based on location keywords
-function matchToAC(title, description) {
-    const text = (title + ' ' + description).toLowerCase();
-    
-    // Try to match specific AC or district mentions
-    for (const ac of UP_ACS) {
-        const acName = ac.name.toLowerCase();
-        const district = ac.district.toLowerCase();
-        
-        if (text.includes(acName) || text.includes(district)) {
-            return ac;
-        }
-    }
-    
-    // For state-level news (no specific location), default to Lucknow Central (state capital)
-    // This is better than random assignment
-    return UP_ACS.find(ac => ac.name === 'Lucknow Central') || UP_ACS[0];
-}
-
-// Determine layer based on content
+// Determine layer
 function determineLayer(title, description) {
     const text = (title + ' ' + description).toLowerCase();
     
-    if (text.includes('pm ') || text.includes('prime minister') || text.includes('parliament')) {
+    if (text.includes('pm ') || text.includes('prime minister') || text.includes('parliament') || 
+        text.includes('प्रधानमंत्री') || text.includes('संसद')) {
         return 'national-news';
     }
     
-    if (text.includes('cm ') || text.includes('chief minister') || text.includes('state government')) {
+    if (text.includes('cm ') || text.includes('chief minister') || text.includes('state government') ||
+        text.includes('मुख्यमंत्री') || text.includes('सीएम') || text.includes('राज्य सरकार')) {
         return 'state-news';
     }
     
@@ -183,116 +100,96 @@ async function fetchRSSFeed(url) {
 
 // Scrape news from all sources
 async function scrapeNews() {
-    console.log('Starting news scraping...');
+    console.log('='.repeat(60));
+    console.log('Starting comprehensive news scraping...');
+    console.log('='.repeat(60));
+    
     const allItems = [];
     
-    // Fetch from RSS feeds
+    // Fetch from all RSS feeds
     for (const source of NEWS_SOURCES) {
-        console.log(`Fetching from ${source.name}...`);
+        console.log(`📰 Fetching from ${source.name}...`);
         const items = await fetchRSSFeed(source.url);
-        allItems.push(...items.map(item => ({ ...item, source: source.name })));
+        console.log(`   → Got ${items.length} items`);
+        allItems.push(...items.map(item => ({ ...item, sourceName: source.name })));
         
-        // Add delay to avoid rate limiting
+        // Rate limiting
         await new Promise(resolve => setTimeout(resolve, 1000));
     }
     
-    console.log(`Fetched ${allItems.length} items from RSS feeds`);
+    console.log(`\n✅ Total items fetched: ${allItems.length}`);
+    console.log('-'.repeat(60));
     
-    // Filter for UP-related news ONLY (exclude other states)
-    const upNews = allItems.filter(item => {
-        const text = ((item.title || '') + ' ' + (item.contentSnippet || item.description || '')).toLowerCase();
+    // Process and classify each news item
+    const classifiedEvents = [];
+    let national = 0, state = 0, district = 0, skipped = 0;
+    
+    for (const item of allItems) {
+        const title = item.title || '';
+        const description = item.contentSnippet || item.description || '';
         
-        // Exclude news about other states
-        const excludeStates = ['bihar', 'jharkhand', 'delhi', 'madhya pradesh', 'mp ', 'haryana', 
-                               'rajasthan', 'punjab', 'uttarakhand', 'bengal', 'maharashtra', 
-                               'karnataka', 'tamil nadu', 'kerala', 'gujarat', 'patna', 'ranchi',
-                               'jaipur', 'chandigarh', 'dehradun', 'kolkata', 'mumbai', 'bengaluru',
-                               'chennai', 'hyderabad', 'ahmedabad'];
+        // Classify location
+        const location = classifyNewsLocation(title, description);
         
-        // If it mentions other states, skip it
-        if (excludeStates.some(state => text.includes(state))) {
-            return false;
+        if (!location) {
+            skipped++;
+            continue; // Skip irrelevant news
         }
         
-        // Must explicitly mention UP or major UP cities/leaders
-        return text.includes('uttar pradesh') || 
-               text.includes(' up ') ||
-               text.includes('u.p.') ||
-               text.includes('lucknow') || 
-               text.includes('yogi adityanath') ||
-               text.includes('akhilesh yadav') ||
-               text.includes('varanasi') ||
-               text.includes('prayagraj') ||
-               text.includes('allahabad') ||
-               text.includes('noida') ||
-               text.includes('agra') ||
-               text.includes('kanpur') ||
-               text.includes('meerut') ||
-               text.includes('ghaziabad') ||
-               text.includes('gorakhpur') ||
-               text.includes('bareilly') ||
-               text.includes('ayodhya') ||
-               text.includes('mathura') ||
-               text.includes('aligarh') ||
-               text.includes('moradabad') ||
-               text.includes('saharanpur') ||
-               text.includes('firozabad') ||
-               text.includes('jhansi') ||
-               text.includes('muzaffarnagar') ||
-               UP_ACS.some(ac => text.includes(ac.district.toLowerCase()));
-    });
-    
-    console.log(`Filtered to ${upNews.length} UP-related items`);
-    
-    // Convert to event format
-    const events = upNews.map(item => {
-        const title = item.title || 'Political Event';
-        const description = item.contentSnippet || item.description || '';
+        // Count by level
+        if (location.level === 'national') national++;
+        else if (location.level === 'state') state++;
+        else if (location.level === 'district') district++;
+        
+        // Create event
         const category = categorizeEvent(title, description);
-        const ac = matchToAC(title, description);
         const layer = determineLayer(title, description);
         
-        // Check if this is actually AC-specific or state-level
-        const text = (title + ' ' + description).toLowerCase();
-        const isACSpecific = UP_ACS.some(ac => 
-            text.includes(ac.name.toLowerCase()) || text.includes(ac.district.toLowerCase())
-        );
-        
-        return {
+        classifiedEvents.push({
             id: `event_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             title: title.substring(0, 150),
-            description: isACSpecific 
-                ? description.substring(0, 300)
-                : `[State-level news] ${description.substring(0, 280)}`,
+            description: description.substring(0, 300),
             category,
             layer,
-            ac: ac.name,
-            location: isACSpecific ? ac.district : 'Uttar Pradesh (State-wide)',
-            lat: ac.lat + (Math.random() - 0.5) * 0.05, // Add slight randomness
-            lng: ac.lng + (Math.random() - 0.5) * 0.05,
+            level: location.level,
+            location: location.location,
+            state: location.state || location.location,
+            lat: location.lat,
+            lng: location.lng,
             date: item.pubDate || new Date().toISOString(),
-            source: item.link || 'https://example.com'
-        };
-    });
+            source: item.link || 'https://example.com',
+            sourceName: item.sourceName
+        });
+    }
     
-    // Store only real events from RSS feeds (no mock data)
-    eventsData = events;
+    eventsData = classifiedEvents;
     lastUpdateTime = new Date().toISOString();
     
-    console.log(`Total REAL events stored: ${eventsData.length}`);
+    console.log('\n📊 CLASSIFICATION RESULTS:');
+    console.log(`   🌏 National (Delhi): ${national} events`);
+    console.log(`   🗺️  State level: ${state} events`);
+    console.log(`   📍 District level (UP): ${district} events`);
+    console.log(`   ❌ Skipped (irrelevant): ${skipped} events`);
+    console.log(`   ✅ Total classified: ${classifiedEvents.length} events`);
+    console.log('='.repeat(60));
     
     // Save to file
     await saveDataToFile();
     
-    return events;
+    return classifiedEvents;
 }
 
 // Save data to file
 async function saveDataToFile() {
     const data = {
         events: eventsData,
-        boundaries: acBoundariesData,
-        lastUpdate: lastUpdateTime
+        lastUpdate: lastUpdateTime,
+        stats: {
+            total: eventsData.length,
+            national: eventsData.filter(e => e.level === 'national').length,
+            state: eventsData.filter(e => e.level === 'state').length,
+            district: eventsData.filter(e => e.level === 'district').length
+        }
     };
     
     try {
@@ -300,7 +197,7 @@ async function saveDataToFile() {
             path.join(__dirname, 'data.json'),
             JSON.stringify(data, null, 2)
         );
-        console.log('Data saved to file');
+        console.log('💾 Data saved to file');
     } catch (error) {
         console.error('Error saving data:', error);
     }
@@ -313,50 +210,110 @@ async function loadDataFromFile() {
         const data = JSON.parse(fileContent);
         
         eventsData = data.events || [];
-        acBoundariesData = data.boundaries || [];
         lastUpdateTime = data.lastUpdate;
         
-        console.log(`Loaded ${eventsData.length} events from file`);
+        console.log(`📂 Loaded ${eventsData.length} events from file`);
         return true;
     } catch (error) {
-        console.log('No existing data file found');
+        console.log('📂 No existing data file found');
         return false;
     }
 }
 
 // API Routes
+
+// Get all events
 app.get('/api/events', (req, res) => {
     res.json(eventsData);
 });
 
-app.get('/api/boundaries', (req, res) => {
-    res.json(acBoundariesData);
+// Get events by level
+app.get('/api/events/national', (req, res) => {
+    const national = eventsData.filter(e => e.level === 'national');
+    res.json(national);
 });
 
+app.get('/api/events/state/:stateName', (req, res) => {
+    const stateName = req.params.stateName;
+    const stateEvents = eventsData.filter(e => 
+        e.level === 'state' && e.location === stateName
+    );
+    res.json(stateEvents);
+});
+
+app.get('/api/events/district/:districtName', (req, res) => {
+    const districtName = req.params.districtName;
+    const districtEvents = eventsData.filter(e => 
+        e.level === 'district' && e.location === districtName
+    );
+    res.json(districtEvents);
+});
+
+// Get aggregated data for map markers
+app.get('/api/markers', (req, res) => {
+    const markers = {};
+    
+    // Group events by location
+    eventsData.forEach(event => {
+        const key = `${event.lat},${event.lng}`;
+        if (!markers[key]) {
+            markers[key] = {
+                location: event.location,
+                lat: event.lat,
+                lng: event.lng,
+                level: event.level,
+                state: event.state,
+                count: 0,
+                events: []
+            };
+        }
+        markers[key].count++;
+        markers[key].events.push(event);
+    });
+    
+    res.json(Object.values(markers));
+});
+
+// Get statistics
 app.get('/api/stats', (req, res) => {
     const stats = {
-        totalEvents: eventsData.length,
+        total: eventsData.length,
+        byLevel: {
+            national: eventsData.filter(e => e.level === 'national').length,
+            state: eventsData.filter(e => e.level === 'state').length,
+            district: eventsData.filter(e => e.level === 'district').length
+        },
         byCategory: {
             protest: eventsData.filter(e => e.category === 'protest').length,
             rally: eventsData.filter(e => e.category === 'rally').length,
             scheme: eventsData.filter(e => e.category === 'scheme').length,
             election: eventsData.filter(e => e.category === 'election').length
         },
-        byLayer: {
-            'ac-politics': eventsData.filter(e => e.layer === 'ac-politics').length,
-            'state-news': eventsData.filter(e => e.layer === 'state-news').length,
-            'national-news': eventsData.filter(e => e.layer === 'national-news').length
-        },
+        byLocation: {},
         lastUpdate: lastUpdateTime
     };
+    
+    // Count by location
+    eventsData.forEach(event => {
+        if (!stats.byLocation[event.location]) {
+            stats.byLocation[event.location] = 0;
+        }
+        stats.byLocation[event.location]++;
+    });
     
     res.json(stats);
 });
 
+// Manual refresh
 app.post('/api/refresh', async (req, res) => {
     try {
+        console.log('🔄 Manual refresh triggered');
         await scrapeNews();
-        res.json({ success: true, message: 'Data refreshed successfully', count: eventsData.length });
+        res.json({ 
+            success: true, 
+            message: 'Data refreshed successfully', 
+            count: eventsData.length 
+        });
     } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }
@@ -364,43 +321,62 @@ app.post('/api/refresh', async (req, res) => {
 
 // Health check
 app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', lastUpdate: lastUpdateTime, eventCount: eventsData.length });
+    res.json({
+        status: 'ok',
+        lastUpdate: lastUpdateTime,
+        eventCount: eventsData.length,
+        sources: NEWS_SOURCES.length
+    });
+});
+
+// Get geo data
+app.get('/api/geo/states', (req, res) => {
+    res.json(INDIA_STATES);
+});
+
+app.get('/api/geo/districts', (req, res) => {
+    res.json(UP_DISTRICTS);
 });
 
 // Initialize server
 async function initialize() {
-    console.log('Initializing UP Politics Monitor Backend...');
-    
-    // Initialize AC boundaries
-    initializeACBoundaries();
+    console.log('\n🚀 Initializing UP Politics Monitor Backend...\n');
     
     // Try to load existing data
     const dataLoaded = await loadDataFromFile();
     
-    // If no data exists, scrape immediately
+    // If no data, scrape immediately
     if (!dataLoaded || eventsData.length === 0) {
-        console.log('No existing data found. Starting initial scrape...');
+        console.log('🔄 No existing data. Starting initial scrape...\n');
         await scrapeNews();
     }
     
-    // Schedule daily scraping at 6 AM
-    cron.schedule('0 6 * * *', async () => {
-        console.log('Running scheduled news scraping...');
-        await scrapeNews();
-    });
-    
-    // Also scrape every 6 hours for more frequent updates
+    // Schedule scraping every 6 hours
     cron.schedule('0 */6 * * *', async () => {
-        console.log('Running periodic news scraping...');
+        console.log('\n⏰ Scheduled scraping started...\n');
         await scrapeNews();
     });
     
-    console.log('Backend initialized successfully');
+    // Also scrape daily at 6 AM
+    cron.schedule('0 6 * * *', async () => {
+        console.log('\n☀️ Daily morning scrape started...\n');
+        await scrapeNews();
+    });
+    
+    console.log('✅ Backend initialized successfully\n');
+    console.log(`📊 Current stats:`);
+    console.log(`   - Total events: ${eventsData.length}`);
+    console.log(`   - News sources: ${NEWS_SOURCES.length}`);
+    console.log(`   - Last update: ${lastUpdateTime || 'Never'}\n`);
 }
 
 // Start server
 app.listen(PORT, async () => {
-    console.log(`UP Politics Monitor Backend running on http://localhost:${PORT}`);
+    console.log(`\n${'='.repeat(60)}`);
+    console.log(`🗺️  UP POLITICS MONITOR - Multi-Level Map System`);
+    console.log(`🌐 Server running on http://localhost:${PORT}`);
+    console.log(`${'='.repeat(60)}\n`);
+    
     await initialize();
 });
 
