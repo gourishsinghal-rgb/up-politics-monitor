@@ -3,16 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UP Politics Monitor - Real-time Political Intelligence Dashboard</title>
+    <title>UP Politics Monitor - Multi-Level Map</title>
     
-    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
-    <!-- Marker Cluster CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
-    
-    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Crimson+Pro:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -28,26 +21,8 @@
             --accent-red: #ef4444;
             --accent-blue: #3b82f6;
             --accent-green: #10b981;
-            --accent-yellow: #f59e0b;
             --border-color: #2d3548;
             --shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-            
-            /* Party Colors */
-            --bjp-color: #ff9933;
-            --sp-color: #ed1c24;
-            --bsp-color: #0047ab;
-            --congress-color: #19aaed;
-            --others-color: #64748b;
-        }
-        
-        .light-mode {
-            --bg-primary: #f8fafc;
-            --bg-secondary: #ffffff;
-            --bg-tertiary: #e2e8f0;
-            --text-primary: #0f172a;
-            --text-secondary: #475569;
-            --border-color: #cbd5e1;
-            --shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
         }
         
         * {
@@ -61,19 +36,17 @@
             background: var(--bg-primary);
             color: var(--text-primary);
             overflow: hidden;
-            transition: background 0.3s ease, color 0.3s ease;
         }
         
         #map {
             position: fixed;
-            top: 0;
+            top: 70px;
             left: 0;
             width: 100%;
-            height: 100%;
+            height: calc(100vh - 70px);
             z-index: 1;
         }
         
-        /* Header */
         .header {
             position: fixed;
             top: 0;
@@ -88,1199 +61,462 @@
             align-items: center;
             justify-content: space-between;
             padding: 0 30px;
-            backdrop-filter: blur(10px);
-            animation: slideDown 0.6s ease;
-        }
-        
-        @keyframes slideDown {
-            from { transform: translateY(-100%); }
-            to { transform: translateY(0); }
         }
         
         .logo {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 32px;
+            font-size: 28px;
             letter-spacing: 2px;
             color: var(--accent-orange);
-            text-shadow: 2px 2px 4px rgba(255, 107, 53, 0.3);
         }
         
-        .logo-subtitle {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 11px;
-            color: var(--text-secondary);
-            letter-spacing: 1px;
-            margin-top: -5px;
-        }
-        
-        .header-controls {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-        }
-        
-        .theme-toggle {
-            width: 50px;
-            height: 26px;
-            background: var(--bg-tertiary);
-            border-radius: 13px;
-            border: 2px solid var(--border-color);
-            cursor: pointer;
-            position: relative;
-            transition: all 0.3s ease;
-        }
-        
-        .theme-toggle::after {
-            content: '🌙';
-            position: absolute;
-            left: 3px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 18px;
-            height: 18px;
-            background: var(--accent-orange);
-            border-radius: 50%;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
-        }
-        
-        .light-mode .theme-toggle::after {
-            content: '☀️';
-            left: 25px;
-        }
-        
-        .share-btn {
-            padding: 8px 16px;
-            background: var(--accent-orange);
-            color: white;
-            border: none;
-            border-radius: 6px;
+        .view-indicator {
             font-family: 'JetBrains Mono', monospace;
             font-size: 12px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            padding: 8px 16px;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
         }
         
-        .share-btn:hover {
-            background: #ff8555;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4);
-        }
-        
-        /* Sidebar */
-        .sidebar {
+        .stats-panel {
             position: fixed;
-            top: 70px;
-            left: 0;
-            width: 340px;
-            height: calc(100vh - 70px);
+            bottom: 20px;
+            left: 20px;
             background: var(--bg-secondary);
-            border-right: 1px solid var(--border-color);
-            z-index: 999;
-            overflow-y: auto;
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid var(--accent-orange);
             box-shadow: var(--shadow);
-            animation: slideInLeft 0.6s ease;
+            z-index: 999;
+            min-width: 250px;
         }
         
-        @keyframes slideInLeft {
-            from { transform: translateX(-100%); }
-            to { transform: translateX(0); }
-        }
-        
-        .sidebar-section {
-            padding: 25px;
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
             border-bottom: 1px solid var(--border-color);
         }
         
-        .section-title {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 18px;
-            letter-spacing: 1.5px;
-            color: var(--accent-orange);
-            margin-bottom: 15px;
+        .stat-item:last-child {
+            border-bottom: none;
         }
         
-        .search-box {
-            width: 100%;
-            padding: 12px 16px;
-            background: var(--bg-tertiary);
-            border: 2px solid var(--border-color);
-            border-radius: 8px;
-            color: var(--text-primary);
-            font-family: 'Crimson Pro', serif;
+        .stat-label {
             font-size: 14px;
-            transition: all 0.3s ease;
-        }
-        
-        .search-box:focus {
-            outline: none;
-            border-color: var(--accent-orange);
-            box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
-        }
-        
-        .time-filters {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
-            margin-top: 10px;
-        }
-        
-        .time-filter-btn {
-            padding: 10px;
-            background: var(--bg-tertiary);
-            border: 2px solid var(--border-color);
-            border-radius: 6px;
-            color: var(--text-primary);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 11px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 600;
-        }
-        
-        .time-filter-btn:hover {
-            border-color: var(--accent-orange);
-        }
-        
-        .time-filter-btn.active {
-            background: var(--accent-orange);
-            border-color: var(--accent-orange);
-            color: white;
-        }
-        
-        .layer-toggle {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 12px 16px;
-            background: var(--bg-tertiary);
-            border-radius: 8px;
-            margin-bottom: 10px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border: 2px solid transparent;
-        }
-        
-        .layer-toggle:hover {
-            border-color: var(--accent-orange);
-        }
-        
-        .layer-toggle.active {
-            background: rgba(255, 107, 53, 0.1);
-            border-color: var(--accent-orange);
-        }
-        
-        .layer-name {
-            font-family: 'Crimson Pro', serif;
-            font-size: 15px;
-            font-weight: 600;
-        }
-        
-        .layer-indicator {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: var(--border-color);
-            transition: all 0.3s ease;
-        }
-        
-        .layer-toggle.active .layer-indicator {
-            background: var(--accent-orange);
-            box-shadow: 0 0 8px var(--accent-orange);
-        }
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-            margin-top: 15px;
-        }
-        
-        .stat-card {
-            background: var(--bg-tertiary);
-            padding: 15px;
-            border-radius: 8px;
-            border-left: 3px solid var(--accent-orange);
+            color: var(--text-secondary);
         }
         
         .stat-value {
             font-family: 'Bebas Neue', sans-serif;
-            font-size: 28px;
-            color: var(--accent-orange);
-            letter-spacing: 1px;
-        }
-        
-        .stat-label {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 10px;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-top: 4px;
-        }
-        
-        .legend {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 13px;
-        }
-        
-        .legend-color {
-            width: 16px;
-            height: 16px;
-            border-radius: 3px;
-            flex-shrink: 0;
-        }
-        
-        /* Info Panel */
-        .info-panel {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            width: 320px;
-            max-height: 400px;
-            background: var(--bg-secondary);
-            border: 2px solid var(--accent-orange);
-            border-radius: 12px;
-            box-shadow: var(--shadow);
-            z-index: 998;
-            overflow: hidden;
-            display: none;
-            animation: slideInRight 0.4s ease;
-        }
-        
-        @keyframes slideInRight {
-            from { transform: translateX(400px); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        
-        .info-panel.active {
-            display: block;
-        }
-        
-        .info-header {
-            padding: 15px 20px;
-            background: var(--accent-orange);
-            color: white;
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 18px;
-            letter-spacing: 1px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .close-btn {
-            background: none;
-            border: none;
-            color: white;
             font-size: 20px;
-            cursor: pointer;
-            padding: 0;
-            width: 24px;
-            height: 24px;
+            color: var(--accent-orange);
+        }
+        
+        /* Custom Leaflet Markers */
+        .custom-marker {
+            background: var(--accent-orange);
+            border: 3px solid white;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 14px;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(255, 107, 53, 0.6);
+            cursor: pointer;
+            transition: transform 0.2s;
         }
         
-        .info-content {
-            padding: 20px;
-            max-height: 340px;
-            overflow-y: auto;
+        .custom-marker:hover {
+            transform: scale(1.2);
         }
         
-        .event-item {
-            padding: 15px;
-            background: var(--bg-tertiary);
-            border-radius: 8px;
-            margin-bottom: 12px;
-            border-left: 3px solid var(--accent-blue);
-            transition: all 0.3s ease;
+        .marker-national {
+            background: #dc2626;
+            width: 45px;
+            height: 45px;
         }
         
-        .event-item:hover {
-            transform: translateX(5px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        .marker-state {
+            background: var(--accent-blue);
+            width: 38px;
+            height: 38px;
         }
         
-        .event-title {
-            font-weight: 700;
-            font-size: 15px;
-            margin-bottom: 8px;
-            color: var(--text-primary);
+        .marker-district {
+            background: var(--accent-orange);
+            width: 32px;
+            height: 32px;
         }
         
-        .event-meta {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 11px;
-            color: var(--text-secondary);
-            margin-bottom: 8px;
-        }
-        
-        .event-description {
-            font-size: 13px;
-            line-height: 1.6;
-            color: var(--text-secondary);
-        }
-        
-        /* Custom Popup */
+        /* Popup Styles */
         .leaflet-popup-content-wrapper {
             background: var(--bg-secondary);
             color: var(--text-primary);
             border: 2px solid var(--accent-orange);
-            border-radius: 8px;
-            box-shadow: var(--shadow);
+            border-radius: 12px;
+            padding: 0;
+        }
+        
+        .leaflet-popup-content {
+            margin: 0;
+            width: 320px !important;
+        }
+        
+        .popup-header {
+            background: var(--accent-orange);
+            color: white;
+            padding: 15px;
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 20px;
+            letter-spacing: 1px;
+            border-radius: 10px 10px 0 0;
+        }
+        
+        .popup-body {
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .event-item {
+            padding: 10px;
+            margin-bottom: 10px;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            border-left: 3px solid var(--accent-blue);
+        }
+        
+        .event-title {
+            font-weight: 600;
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+        
+        .event-meta {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            color: var(--text-secondary);
         }
         
         .leaflet-popup-tip {
             background: var(--bg-secondary);
-            border: 2px solid var(--accent-orange);
         }
         
-        .popup-content {
-            font-family: 'Crimson Pro', serif;
-            padding: 5px;
-        }
-        
-        .popup-title {
-            font-weight: 700;
-            font-size: 14px;
-            margin-bottom: 6px;
-            color: var(--accent-orange);
-        }
-        
-        .popup-meta {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 10px;
-            color: var(--text-secondary);
-            margin-bottom: 6px;
-        }
-        
-        .popup-desc {
-            font-size: 12px;
-            line-height: 1.5;
-            margin-bottom: 8px;
-        }
-        
-        .popup-link {
-            display: inline-block;
-            padding: 4px 10px;
-            background: var(--accent-orange);
-            color: white;
-            text-decoration: none;
-            border-radius: 4px;
-            font-size: 11px;
-            font-family: 'JetBrains Mono', monospace;
-            transition: all 0.3s ease;
-        }
-        
-        .popup-link:hover {
-            background: #ff8555;
-        }
-        
-        /* Loading */
-        .loading-overlay {
+        .loading {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: var(--bg-primary);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--bg-secondary);
+            padding: 30px 50px;
+            border-radius: 12px;
+            border: 2px solid var(--accent-orange);
             z-index: 9999;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            gap: 20px;
-        }
-        
-        .loading-spinner {
-            width: 60px;
-            height: 60px;
-            border: 4px solid var(--border-color);
-            border-top: 4px solid var(--accent-orange);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .loading-text {
             font-family: 'Bebas Neue', sans-serif;
             font-size: 24px;
             letter-spacing: 2px;
-            color: var(--accent-orange);
         }
         
-        /* Mobile Responsive */
-        @media (max-width: 768px) {
-            .sidebar {
-                width: 100%;
-                height: auto;
-                max-height: 50vh;
-                top: auto;
-                bottom: 0;
-                border-right: none;
-                border-top: 1px solid var(--border-color);
-            }
-            
-            .header {
-                padding: 0 15px;
-            }
-            
-            .logo {
-                font-size: 24px;
-            }
-            
-            .info-panel {
-                width: calc(100% - 30px);
-                left: 15px;
-                right: 15px;
-                bottom: 15px;
-            }
+        .zoom-hint {
+            position: fixed;
+            top: 90px;
+            right: 20px;
+            background: var(--bg-secondary);
+            padding: 12px 20px;
+            border-radius: 8px;
+            border: 1px solid var(--accent-orange);
+            font-size: 12px;
+            color: var(--text-secondary);
+            z-index: 999;
+            animation: pulse 2s infinite;
         }
         
-        /* Scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        
-        ::-webkit-scrollbar-track {
-            background: var(--bg-tertiary);
-        }
-        
-        ::-webkit-scrollbar-thumb {
-            background: var(--accent-orange);
-            border-radius: 4px;
-        }
-        
-        ::-webkit-scrollbar-thumb:hover {
-            background: #ff8555;
+        @keyframes pulse {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
         }
     </style>
 </head>
 <body>
-    <!-- Loading Overlay -->
-    <div class="loading-overlay" id="loadingOverlay">
-        <div class="loading-spinner"></div>
-        <div class="loading-text">LOADING UP POLITICS MONITOR</div>
-    </div>
+    <div class="loading" id="loading">LOADING MAP...</div>
     
-    <!-- Header -->
     <div class="header">
-        <div>
-            <div class="logo">UP POLITICS MONITOR</div>
-            <div class="logo-subtitle">REAL-TIME INTELLIGENCE • 403 CONSTITUENCIES</div>
-        </div>
-        <div class="header-controls">
-            <div class="theme-toggle" id="themeToggle"></div>
-            <button class="share-btn" id="shareBtn">SHARE VIEW</button>
-        </div>
+        <div class="logo">UP POLITICS MONITOR</div>
+        <div class="view-indicator" id="viewIndicator">Loading...</div>
     </div>
     
-    <!-- Map Container -->
     <div id="map"></div>
     
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <!-- Search Section -->
-        <div class="sidebar-section">
-            <div class="section-title">SEARCH CONSTITUENCIES</div>
-            <input type="text" class="search-box" id="searchBox" placeholder="Search AC name, district, or party...">
+    <div class="zoom-hint" id="zoomHint" style="display: none;">
+        💡 Click on UP to see 75 districts
+    </div>
+    
+    <div class="stats-panel">
+        <div class="stat-item">
+            <span class="stat-label">Total Events:</span>
+            <span class="stat-value" id="totalEvents">0</span>
         </div>
-        
-        <!-- Time Filter Section -->
-        <div class="sidebar-section">
-            <div class="section-title">TIME RANGE</div>
-            <div class="time-filters">
-                <button class="time-filter-btn" data-days="1">1D</button>
-                <button class="time-filter-btn active" data-days="7">7D</button>
-                <button class="time-filter-btn" data-days="30">30D</button>
-                <button class="time-filter-btn" data-days="all">ALL</button>
-            </div>
+        <div class="stat-item">
+            <span class="stat-label">National:</span>
+            <span class="stat-value" id="nationalEvents">0</span>
         </div>
-        
-        <!-- Layer Toggles -->
-        <div class="sidebar-section">
-            <div class="section-title">DATA LAYERS</div>
-            <div class="layer-toggle active" data-layer="ac-politics">
-                <span class="layer-name">AC Political Events</span>
-                <div class="layer-indicator"></div>
-            </div>
-            <div class="layer-toggle active" data-layer="state-news">
-                <span class="layer-name">State-Level News</span>
-                <div class="layer-indicator"></div>
-            </div>
-            <div class="layer-toggle active" data-layer="national-news">
-                <span class="layer-name">National Politics</span>
-                <div class="layer-indicator"></div>
-            </div>
-            <div class="layer-toggle active" data-layer="hotspots">
-                <span class="layer-name">Political Hotspots</span>
-                <div class="layer-indicator"></div>
-            </div>
+        <div class="stat-item">
+            <span class="stat-label">States:</span>
+            <span class="stat-value" id="stateEvents">0</span>
         </div>
-        
-        <!-- Statistics -->
-        <div class="sidebar-section">
-            <div class="section-title">LIVE STATISTICS</div>
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-value" id="totalEvents">0</div>
-                    <div class="stat-label">Total Events</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="activeACs">0</div>
-                    <div class="stat-label">Active ACs</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="protests">0</div>
-                    <div class="stat-label">Protests</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="rallies">0</div>
-                    <div class="stat-label">Rallies</div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Legend -->
-        <div class="sidebar-section">
-            <div class="section-title">EVENT CATEGORIES</div>
-            <div class="legend">
-                <div class="legend-item">
-                    <div class="legend-color" style="background: var(--accent-red);"></div>
-                    <span>Protests & Controversies</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: var(--accent-blue);"></div>
-                    <span>Rallies & Public Meetings</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: var(--accent-green);"></div>
-                    <span>Schemes & Development</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: var(--accent-yellow);"></div>
-                    <span>Elections & Bypolls</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: #1e293b;"></div>
-                    <span>National Events</span>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Party Legend -->
-        <div class="sidebar-section">
-            <div class="section-title">PARTY STRENGTH</div>
-            <div class="legend">
-                <div class="legend-item">
-                    <div class="legend-color" style="background: var(--bjp-color);"></div>
-                    <span>BJP (255 seats)</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: var(--sp-color);"></div>
-                    <span>Samajwadi Party (111 seats)</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: var(--bsp-color);"></div>
-                    <span>BSP (1 seat)</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: var(--congress-color);"></div>
-                    <span>Congress (2 seats)</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: var(--others-color);"></div>
-                    <span>Others (34 seats)</span>
-                </div>
-            </div>
+        <div class="stat-item">
+            <span class="stat-label">UP Districts:</span>
+            <span class="stat-value" id="districtEvents">0</span>
         </div>
     </div>
     
-    <!-- Info Panel -->
-    <div class="info-panel" id="infoPanel">
-        <div class="info-header">
-            <span id="infoPanelTitle">CONSTITUENCY INFO</span>
-            <button class="close-btn" id="closeInfo">×</button>
-        </div>
-        <div class="info-content" id="infoPanelContent">
-            <!-- Dynamic content -->
-        </div>
-    </div>
-    
-    <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
-    <!-- Marker Cluster JS -->
-    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-    
     <script>
-        // Configuration - Auto-detect environment
-        const API_BASE_URL = window.location.hostname === 'localhost' 
+        const API_BASE = window.location.hostname === 'localhost' 
             ? 'http://localhost:3000/api' 
             : '/api';
         
-        // Global State
         let map;
-        let acLayer;
-        let eventMarkers = [];
-        let markerClusterGroup;
-        let currentFilters = {
-            timeRange: 7,
-            layers: {
-                'ac-politics': true,
-                'state-news': true,
-                'national-news': true,
-                'hotspots': true
-            }
-        };
-        let allEvents = [];
-        let acBoundaries = [];
+        let currentView = 'india';
+        let allMarkers = [];
+        let markersData = [];
         
-        // Initialize Map
+        // Initialize map
         function initMap() {
             map = L.map('map', {
-                center: [26.8467, 80.9462], // Lucknow
-                zoom: 7,
-                zoomControl: false,
-                minZoom: 6,
-                maxZoom: 18
+                center: [23.5937, 78.9629], // India center
+                zoom: 5,
+                minZoom: 4,
+                maxZoom: 18,
+                zoomControl: true
             });
             
-            // Add zoom control to top right
-            L.control.zoom({
-                position: 'topright'
-            }).addTo(map);
-            
-            // Add tile layer
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© OpenStreetMap contributors',
                 maxZoom: 18
             }).addTo(map);
             
-            // Initialize marker cluster group
-            markerClusterGroup = L.markerClusterGroup({
-                maxClusterRadius: 50,
-                spiderfyOnMaxZoom: true,
-                showCoverageOnHover: false,
-                zoomToBoundsOnClick: true,
-                iconCreateFunction: function(cluster) {
-                    const count = cluster.getChildCount();
-                    let size = 'small';
-                    if (count > 10) size = 'medium';
-                    if (count > 25) size = 'large';
-                    
-                    return L.divIcon({
-                        html: `<div style="background: var(--accent-orange); color: white; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 16px; border: 3px solid white; box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4);">${count}</div>`,
-                        className: 'marker-cluster',
-                        iconSize: L.point(40, 40)
-                    });
-                }
-            });
-            
-            map.addLayer(markerClusterGroup);
+            // Listen for zoom changes
+            map.on('zoomend', handleZoomChange);
+            map.on('moveend', updateViewIndicator);
             
             // Load data
-            loadACBoundaries();
-            loadEvents();
-            
-            // Update URL on map move
-            map.on('moveend', updateURL);
+            loadMarkers();
         }
         
-        // Load AC Boundaries
-        async function loadACBoundaries() {
+        // Load marker data from API
+        async function loadMarkers() {
             try {
-                const response = await fetch(`${API_BASE_URL}/boundaries`);
-                acBoundaries = await response.json();
+                const response = await fetch(`${API_BASE}/markers`);
+                markersData = await response.json();
                 
-                acLayer = L.geoJSON(acBoundaries, {
-                    style: function(feature) {
-                        const party = feature.properties.party || 'OTHERS';
-                        let color = getComputedStyle(document.documentElement).getPropertyValue('--others-color');
-                        
-                        if (party === 'BJP') color = getComputedStyle(document.documentElement).getPropertyValue('--bjp-color');
-                        else if (party === 'SP') color = getComputedStyle(document.documentElement).getPropertyValue('--sp-color');
-                        else if (party === 'BSP') color = getComputedStyle(document.documentElement).getPropertyValue('--bsp-color');
-                        else if (party === 'INC') color = getComputedStyle(document.documentElement).getPropertyValue('--congress-color');
-                        
-                        return {
-                            fillColor: color,
-                            weight: 1,
-                            opacity: 0.6,
-                            color: 'white',
-                            fillOpacity: 0.3
-                        };
-                    },
-                    onEachFeature: function(feature, layer) {
-                        layer.on('click', function() {
-                            showACInfo(feature.properties);
-                        });
-                        
-                        layer.on('mouseover', function(e) {
-                            const layer = e.target;
-                            layer.setStyle({
-                                fillOpacity: 0.6,
-                                weight: 2
-                            });
-                        });
-                        
-                        layer.on('mouseout', function(e) {
-                            acLayer.resetStyle(e.target);
-                        });
-                    }
-                }).addTo(map);
+                console.log('Loaded markers:', markersData);
                 
-            } catch (error) {
-                console.error('Error loading AC boundaries:', error);
-                // Fallback to mock data if API fails
-                loadMockBoundaries();
-            }
-        }
-        
-        // Load Events
-        async function loadEvents() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/events`);
-                allEvents = await response.json();
-                
-                filterAndDisplayEvents();
+                // Update stats
                 updateStats();
                 
+                // Show markers based on current view
+                updateMarkers();
+                
+                // Hide loading
+                document.getElementById('loading').style.display = 'none';
+                
             } catch (error) {
-                console.error('Error loading events:', error);
-                // Fallback to mock data
-                loadMockEvents();
+                console.error('Error loading markers:', error);
+                document.getElementById('loading').textContent = 'ERROR LOADING DATA';
             }
         }
         
-        // Filter and Display Events
-        function filterAndDisplayEvents() {
-            // Clear existing markers
-            markerClusterGroup.clearLayers();
+        // Update statistics
+        function updateStats() {
+            const stats = {
+                total: 0,
+                national: 0,
+                state: 0,
+                district: 0
+            };
             
-            // Filter events by time range
-            const now = Date.now();
-            const timeRangeMs = currentFilters.timeRange === 'all' ? Infinity : currentFilters.timeRange * 24 * 60 * 60 * 1000;
-            
-            const filteredEvents = allEvents.filter(event => {
-                const eventTime = new Date(event.date).getTime();
-                const withinTimeRange = (now - eventTime) <= timeRangeMs;
-                const layerEnabled = currentFilters.layers[event.layer];
-                
-                return withinTimeRange && layerEnabled;
+            markersData.forEach(marker => {
+                stats.total += marker.count;
+                if (marker.level === 'national') stats.national += marker.count;
+                else if (marker.level === 'state') stats.state += marker.count;
+                else if (marker.level === 'district') stats.district += marker.count;
             });
             
-            // Add markers
-            filteredEvents.forEach(event => {
-                const marker = createEventMarker(event);
-                markerClusterGroup.addLayer(marker);
-            });
-            
-            updateStats();
+            document.getElementById('totalEvents').textContent = stats.total;
+            document.getElementById('nationalEvents').textContent = stats.national;
+            document.getElementById('stateEvents').textContent = stats.state;
+            document.getElementById('districtEvents').textContent = stats.district;
         }
         
-        // Create Event Marker
-        function createEventMarker(event) {
-            const color = getEventColor(event.category);
+        // Handle zoom changes
+        function handleZoomChange() {
+            const zoom = map.getZoom();
+            const center = map.getCenter();
+            
+            // If zoomed into UP region
+            if (zoom >= 7 && isInUPRegion(center)) {
+                if (currentView !== 'up') {
+                    currentView = 'up';
+                    updateMarkers();
+                }
+            } else {
+                if (currentView !== 'india') {
+                    currentView = 'india';
+                    updateMarkers();
+                }
+            }
+            
+            updateViewIndicator();
+        }
+        
+        // Check if view is in UP region
+        function isInUPRegion(center) {
+            // UP bounds approximately
+            return center.lat > 24 && center.lat < 31 && 
+                   center.lng > 77 && center.lng < 85;
+        }
+        
+        // Update view indicator
+        function updateViewIndicator() {
+            const zoom = map.getZoom();
+            if (currentView === 'india') {
+                document.getElementById('viewIndicator').textContent = 
+                    `🌏 INDIA VIEW (Zoom: ${zoom})`;
+                document.getElementById('zoomHint').style.display = 'block';
+            } else {
+                document.getElementById('viewIndicator').textContent = 
+                    `🗺️ UP DISTRICTS (Zoom: ${zoom})`;
+                document.getElementById('zoomHint').style.display = 'none';
+            }
+        }
+        
+        // Update markers based on current view
+        function updateMarkers() {
+            // Clear existing markers
+            allMarkers.forEach(marker => map.removeLayer(marker));
+            allMarkers = [];
+            
+            if (currentView === 'india') {
+                showIndiaView();
+            } else {
+                showUPView();
+            }
+        }
+        
+        // Show India-level view (states + national)
+        function showIndiaView() {
+            markersData.forEach(markerData => {
+                // Show national and state-level markers
+                if (markerData.level === 'national' || markerData.level === 'state') {
+                    createMarker(markerData);
+                }
+            });
+        }
+        
+        // Show UP districts view
+        function showUPView() {
+            markersData.forEach(markerData => {
+                // Show only UP district markers
+                if (markerData.level === 'district' && markerData.state === 'Uttar Pradesh') {
+                    createMarker(markerData);
+                }
+            });
+        }
+        
+        // Create marker
+        function createMarker(markerData) {
+            const markerClass = `marker-${markerData.level}`;
+            const size = markerData.level === 'national' ? 45 : 
+                        markerData.level === 'state' ? 38 : 32;
             
             const icon = L.divIcon({
-                html: `<div style="background: ${color}; width: 14px; height: 14px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"></div>`,
-                className: 'event-marker',
-                iconSize: [14, 14]
+                html: `<div class="custom-marker ${markerClass}">${markerData.count}</div>`,
+                className: '',
+                iconSize: [size, size],
+                iconAnchor: [size/2, size/2]
             });
             
-            const marker = L.marker([event.lat, event.lng], { icon });
+            const marker = L.marker([markerData.lat, markerData.lng], { icon });
             
-            const popupContent = `
-                <div class="popup-content">
-                    <div class="popup-title">${event.title}</div>
-                    <div class="popup-meta">${event.ac || event.location} • ${formatDate(event.date)}</div>
-                    <div class="popup-desc">${event.description}</div>
-                    <a href="${event.source}" target="_blank" class="popup-link">READ MORE</a>
+            // Create popup
+            const popupContent = createPopupContent(markerData);
+            marker.bindPopup(popupContent, { maxWidth: 350 });
+            
+            // Handle click for UP marker in India view
+            if (markerData.location === 'Uttar Pradesh' && currentView === 'india') {
+                marker.on('click', () => {
+                    map.flyTo([26.8467, 80.9462], 8, { duration: 1.5 });
+                });
+            }
+            
+            marker.addTo(map);
+            allMarkers.push(marker);
+        }
+        
+        // Create popup content
+        function createPopupContent(markerData) {
+            let levelLabel = markerData.level === 'national' ? '🌏 National News' :
+                            markerData.level === 'state' ? '🗺️ State News' :
+                            '📍 District News';
+            
+            let html = `
+                <div class="popup-header">
+                    ${levelLabel}: ${markerData.location}
                 </div>
+                <div class="popup-body">
+                    <div style="margin-bottom: 10px; font-weight: 600; color: var(--accent-orange);">
+                        ${markerData.count} Events
+                    </div>
             `;
             
-            marker.bindPopup(popupContent);
+            // Show first 5 events
+            const eventsToShow = markerData.events.slice(0, 5);
+            eventsToShow.forEach(event => {
+                const date = new Date(event.date);
+                const timeAgo = getTimeAgo(date);
+                
+                html += `
+                    <div class="event-item">
+                        <div class="event-title">${event.title}</div>
+                        <div class="event-meta">${timeAgo} • ${event.category}</div>
+                    </div>
+                `;
+            });
             
-            return marker;
+            if (markerData.count > 5) {
+                html += `<div style="text-align: center; padding: 10px; color: var(--text-secondary); font-size: 12px;">
+                    +${markerData.count - 5} more events
+                </div>`;
+            }
+            
+            html += '</div>';
+            return html;
         }
         
-        // Get Event Color
-        function getEventColor(category) {
-            const colors = {
-                'protest': getComputedStyle(document.documentElement).getPropertyValue('--accent-red').trim(),
-                'rally': getComputedStyle(document.documentElement).getPropertyValue('--accent-blue').trim(),
-                'scheme': getComputedStyle(document.documentElement).getPropertyValue('--accent-green').trim(),
-                'election': getComputedStyle(document.documentElement).getPropertyValue('--accent-yellow').trim(),
-                'national': '#1e293b'
-            };
-            return colors[category] || colors.rally;
-        }
-        
-        // Format Date
-        function formatDate(dateString) {
-            const date = new Date(dateString);
+        // Get time ago string
+        function getTimeAgo(date) {
             const now = new Date();
-            const diffTime = Math.abs(now - date);
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            const diffMs = now - date;
+            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
             
             if (diffDays === 0) return 'Today';
             if (diffDays === 1) return 'Yesterday';
             if (diffDays < 7) return `${diffDays}d ago`;
-            
-            return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+            if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
+            return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
         }
         
-        // Update Statistics
-        function updateStats() {
-            const now = Date.now();
-            const timeRangeMs = currentFilters.timeRange === 'all' ? Infinity : currentFilters.timeRange * 24 * 60 * 60 * 1000;
-            
-            const filteredEvents = allEvents.filter(event => {
-                const eventTime = new Date(event.date).getTime();
-                return (now - eventTime) <= timeRangeMs;
-            });
-            
-            document.getElementById('totalEvents').textContent = filteredEvents.length;
-            
-            const uniqueACs = new Set(filteredEvents.map(e => e.ac).filter(Boolean));
-            document.getElementById('activeACs').textContent = uniqueACs.size;
-            
-            const protests = filteredEvents.filter(e => e.category === 'protest').length;
-            document.getElementById('protests').textContent = protests;
-            
-            const rallies = filteredEvents.filter(e => e.category === 'rally').length;
-            document.getElementById('rallies').textContent = rallies;
-        }
-        
-        // Show AC Info
-        function showACInfo(acData) {
-            const infoPanel = document.getElementById('infoPanel');
-            const infoPanelTitle = document.getElementById('infoPanelTitle');
-            const infoPanelContent = document.getElementById('infoPanelContent');
-            
-            infoPanelTitle.textContent = acData.name;
-            
-            const acEvents = allEvents.filter(e => e.ac === acData.name);
-            
-            let content = `
-                <div style="margin-bottom: 15px;">
-                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-secondary); margin-bottom: 8px;">
-                        District: ${acData.district || 'N/A'} • Party: ${acData.party || 'N/A'}
-                    </div>
-                </div>
-            `;
-            
-            if (acEvents.length > 0) {
-                content += '<div style="font-family: \'Bebas Neue\', sans-serif; font-size: 16px; margin-bottom: 12px; color: var(--accent-orange);">RECENT EVENTS</div>';
-                
-                acEvents.slice(0, 5).forEach(event => {
-                    const color = getEventColor(event.category);
-                    content += `
-                        <div class="event-item" style="border-left-color: ${color};">
-                            <div class="event-title">${event.title}</div>
-                            <div class="event-meta">${formatDate(event.date)} • ${event.category}</div>
-                            <div class="event-description">${event.description}</div>
-                        </div>
-                    `;
-                });
-            } else {
-                content += '<div style="text-align: center; padding: 20px; color: var(--text-secondary);">No recent events in this constituency</div>';
-            }
-            
-            infoPanelContent.innerHTML = content;
-            infoPanel.classList.add('active');
-        }
-        
-        // Update URL
-        function updateURL() {
-            const center = map.getCenter();
-            const zoom = map.getZoom();
-            const layers = Object.keys(currentFilters.layers).filter(k => currentFilters.layers[k]).join(',');
-            
-            const params = new URLSearchParams({
-                lat: center.lat.toFixed(4),
-                lng: center.lng.toFixed(4),
-                zoom: zoom,
-                time: currentFilters.timeRange,
-                layers: layers
-            });
-            
-            window.history.replaceState({}, '', `?${params.toString()}`);
-        }
-        
-        // Load URL Parameters
-        function loadURLParameters() {
-            const params = new URLSearchParams(window.location.search);
-            
-            if (params.has('lat') && params.has('lng') && params.has('zoom')) {
-                const lat = parseFloat(params.get('lat'));
-                const lng = parseFloat(params.get('lng'));
-                const zoom = parseInt(params.get('zoom'));
-                
-                map.setView([lat, lng], zoom);
-            }
-            
-            if (params.has('time')) {
-                currentFilters.timeRange = params.get('time') === 'all' ? 'all' : parseInt(params.get('time'));
-                document.querySelectorAll('.time-filter-btn').forEach(btn => {
-                    btn.classList.remove('active');
-                    if (btn.dataset.days == currentFilters.timeRange) {
-                        btn.classList.add('active');
-                    }
-                });
-            }
-            
-            if (params.has('layers')) {
-                const layers = params.get('layers').split(',');
-                Object.keys(currentFilters.layers).forEach(key => {
-                    currentFilters.layers[key] = layers.includes(key);
-                });
-                
-                document.querySelectorAll('.layer-toggle').forEach(toggle => {
-                    const layer = toggle.dataset.layer;
-                    if (currentFilters.layers[layer]) {
-                        toggle.classList.add('active');
-                    } else {
-                        toggle.classList.remove('active');
-                    }
-                });
-            }
-        }
-        
-        // Mock Data Functions
-        function loadMockBoundaries() {
-            // Simplified mock data for key constituencies
-            const mockACs = [
-                { name: 'Lucknow Central', district: 'Lucknow', party: 'BJP', lat: 26.8467, lng: 80.9462 },
-                { name: 'Lucknow West', district: 'Lucknow', party: 'BJP', lat: 26.8300, lng: 80.9200 },
-                { name: 'Lucknow East', district: 'Lucknow', party: 'BJP', lat: 26.8600, lng: 80.9700 },
-                { name: 'Lucknow North', district: 'Lucknow', party: 'SP', lat: 26.8800, lng: 80.9500 },
-                { name: 'Lucknow Cantonment', district: 'Lucknow', party: 'BJP', lat: 26.8200, lng: 80.9400 },
-                { name: 'Gorakhpur Urban', district: 'Gorakhpur', party: 'BJP', lat: 26.7606, lng: 83.3732 },
-                { name: 'Varanasi North', district: 'Varanasi', party: 'BJP', lat: 25.3176, lng: 82.9739 },
-                { name: 'Agra Cantonment', district: 'Agra', party: 'BJP', lat: 27.1767, lng: 78.0081 },
-                { name: 'Meerut', district: 'Meerut', party: 'BJP', lat: 28.9845, lng: 77.7064 },
-                { name: 'Kanpur Cantonment', district: 'Kanpur Nagar', party: 'BJP', lat: 26.4499, lng: 80.3319 }
-            ];
-            
-            // Create simple circle markers for ACs
-            mockACs.forEach(ac => {
-                const circle = L.circle([ac.lat, ac.lng], {
-                    radius: 5000,
-                    fillColor: ac.party === 'BJP' ? '#ff9933' : ac.party === 'SP' ? '#ed1c24' : '#64748b',
-                    fillOpacity: 0.3,
-                    color: 'white',
-                    weight: 1
-                }).addTo(map);
-                
-                circle.bindTooltip(ac.name, { permanent: false, direction: 'top' });
-                circle.on('click', () => showACInfo(ac));
-            });
-        }
-        
-        function loadMockEvents() {
-            // Mock events data
-            allEvents = [
-                {
-                    title: 'CM Yogi addresses mega rally in Lucknow',
-                    description: 'Chief Minister Yogi Adityanath addressed thousands at a public rally discussing development initiatives.',
-                    category: 'rally',
-                    layer: 'ac-politics',
-                    ac: 'Lucknow Central',
-                    location: 'Lucknow',
-                    lat: 26.8467,
-                    lng: 80.9462,
-                    date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-                    source: 'https://example.com/news/1'
-                },
-                {
-                    title: 'Farmers protest over land acquisition',
-                    description: 'Local farmers staged protest against proposed highway expansion in the area.',
-                    category: 'protest',
-                    layer: 'ac-politics',
-                    ac: 'Lucknow West',
-                    location: 'Lucknow',
-                    lat: 26.8300,
-                    lng: 80.9200,
-                    date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-                    source: 'https://example.com/news/2'
-                },
-                {
-                    title: 'New metro line inaugurated',
-                    description: 'State government inaugurates new metro corridor connecting eastern suburbs.',
-                    category: 'scheme',
-                    layer: 'ac-politics',
-                    ac: 'Lucknow East',
-                    location: 'Lucknow',
-                    lat: 26.8600,
-                    lng: 80.9700,
-                    date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-                    source: 'https://example.com/news/3'
-                },
-                {
-                    title: 'Akhilesh Yadav campaign in Gorakhpur',
-                    description: 'SP chief Akhilesh Yadav held roadshow and public meeting in Gorakhpur.',
-                    category: 'rally',
-                    layer: 'ac-politics',
-                    ac: 'Gorakhpur Urban',
-                    location: 'Gorakhpur',
-                    lat: 26.7606,
-                    lng: 83.3732,
-                    date: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
-                    source: 'https://example.com/news/4'
-                },
-                {
-                    title: 'Bypoll nominations filed in Ghosi',
-                    description: 'Multiple candidates file nomination papers for upcoming bypoll in Ghosi assembly seat.',
-                    category: 'election',
-                    layer: 'ac-politics',
-                    ac: 'Ghosi',
-                    location: 'Mau',
-                    lat: 25.9890,
-                    lng: 83.5371,
-                    date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-                    source: 'https://example.com/news/5'
-                },
-                {
-                    title: 'PM Modi visits Varanasi',
-                    description: 'Prime Minister Narendra Modi inaugurates multiple development projects worth Rs 5000 crore.',
-                    category: 'national',
-                    layer: 'national-news',
-                    ac: 'Varanasi North',
-                    location: 'Varanasi',
-                    lat: 25.3176,
-                    lng: 82.9739,
-                    date: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
-                    source: 'https://example.com/news/6'
-                }
-            ];
-            
-            // Generate more random events across UP
-            const categories = ['protest', 'rally', 'scheme', 'election'];
-            const layers = ['ac-politics', 'state-news'];
-            const locations = [
-                { ac: 'Agra Cantonment', lat: 27.1767, lng: 78.0081 },
-                { ac: 'Meerut', lat: 28.9845, lng: 77.7064 },
-                { ac: 'Kanpur Cantonment', lat: 26.4499, lng: 80.3319 },
-                { ac: 'Allahabad South', lat: 25.4358, lng: 81.8463 },
-                { ac: 'Bareilly', lat: 28.3670, lng: 79.4304 }
-            ];
-            
-            for (let i = 0; i < 40; i++) {
-                const loc = locations[Math.floor(Math.random() * locations.length)];
-                const cat = categories[Math.floor(Math.random() * categories.length)];
-                const layer = layers[Math.floor(Math.random() * layers.length)];
-                
-                allEvents.push({
-                    title: `${cat.charAt(0).toUpperCase() + cat.slice(1)} event in ${loc.ac}`,
-                    description: `Political activity reported in ${loc.ac} constituency.`,
-                    category: cat,
-                    layer: layer,
-                    ac: loc.ac,
-                    location: loc.ac,
-                    lat: loc.lat + (Math.random() - 0.5) * 0.1,
-                    lng: loc.lng + (Math.random() - 0.5) * 0.1,
-                    date: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
-                    source: 'https://example.com/news/' + i
-                });
-            }
-            
-            filterAndDisplayEvents();
-            updateStats();
-        }
-        
-        // Event Listeners
-        document.addEventListener('DOMContentLoaded', function() {
-            // Hide loading overlay
-            setTimeout(() => {
-                document.getElementById('loadingOverlay').style.display = 'none';
-            }, 1500);
-            
-            // Initialize map
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
             initMap();
-            
-            // Load URL parameters
-            setTimeout(loadURLParameters, 500);
-            
-            // Theme toggle
-            document.getElementById('themeToggle').addEventListener('click', function() {
-                document.body.classList.toggle('light-mode');
-            });
-            
-            // Share button
-            document.getElementById('shareBtn').addEventListener('click', function() {
-                navigator.clipboard.writeText(window.location.href);
-                this.textContent = 'COPIED!';
-                setTimeout(() => {
-                    this.textContent = 'SHARE VIEW';
-                }, 2000);
-            });
-            
-            // Time filter buttons
-            document.querySelectorAll('.time-filter-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    document.querySelectorAll('.time-filter-btn').forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    
-                    currentFilters.timeRange = this.dataset.days === 'all' ? 'all' : parseInt(this.dataset.days);
-                    filterAndDisplayEvents();
-                    updateURL();
-                });
-            });
-            
-            // Layer toggles
-            document.querySelectorAll('.layer-toggle').forEach(toggle => {
-                toggle.addEventListener('click', function() {
-                    this.classList.toggle('active');
-                    const layer = this.dataset.layer;
-                    currentFilters.layers[layer] = this.classList.contains('active');
-                    filterAndDisplayEvents();
-                    updateURL();
-                });
-            });
-            
-            // Close info panel
-            document.getElementById('closeInfo').addEventListener('click', function() {
-                document.getElementById('infoPanel').classList.remove('active');
-            });
-            
-            // Search box
-            document.getElementById('searchBox').addEventListener('input', function(e) {
-                const searchTerm = e.target.value.toLowerCase();
-                
-                if (searchTerm.length > 2) {
-                    const matchingEvents = allEvents.filter(event => 
-                        (event.ac && event.ac.toLowerCase().includes(searchTerm)) ||
-                        (event.location && event.location.toLowerCase().includes(searchTerm)) ||
-                        (event.title && event.title.toLowerCase().includes(searchTerm))
-                    );
-                    
-                    if (matchingEvents.length > 0) {
-                        const firstMatch = matchingEvents[0];
-                        map.setView([firstMatch.lat, firstMatch.lng], 12);
-                    }
-                }
-            });
         });
     </script>
 </body>
